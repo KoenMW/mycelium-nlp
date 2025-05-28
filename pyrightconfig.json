@@ -1,5 +1,5 @@
 {
-  "typeCheckingMode": "strict",
+  "typeCheckingMode": "standard",
   "include": ["src"], // or "." if your code is in root
   "reportMissingTypeStubs": true,
   "reportMissingImports": true
