@@ -22,8 +22,6 @@ class VectorDB:
                 raw_data: List[dict] = json.load(f)
                 self.data = [(item["text"], np.array(item["vector"], dtype=np.float64)) for item in raw_data]
                 self.existing_texts = {item["text"] for item in raw_data}
-                if self.data:
-                    self.embedding.fit([text for text, _ in self.data])
 
     def _save(self) -> None:
         with open(self.filepath, "w") as f:
@@ -56,6 +54,7 @@ class VectorDB:
 
     def _cosine_similarity(self, vec1: NDArray[np.float64], vec2: NDArray[np.float64]) -> float:
         dot_product: float = float(np.dot(vec1, vec2))
+
         norm1: float = float(np.linalg.norm(vec1))
         norm2: float = float(np.linalg.norm(vec2))
 
