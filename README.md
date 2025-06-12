@@ -12,7 +12,7 @@ Assuming you have already cloned the repository:
 
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate  # On Windows: venv\\Scripts\\activate
    ```
 
 2. **Install dependencies:**
@@ -21,7 +21,27 @@ Assuming you have already cloned the repository:
    pip install -r requirements.txt
    ```
 
-3. **Prepare data folders:**
+3. **Install and set up Ollama:**
+
+   This project requires a local instance of Ollama to run the `llama3.2` model.
+
+   - [Install Ollama](https://ollama.com/)
+
+   - Pull the required model:
+
+     ```bash
+     ollama pull llama3:2
+     ```
+
+   - Start the Ollama server:
+
+     ```bash
+     ollama serve
+     ```
+
+   > ⚠️ **Important:** If Ollama is not running or the `llama3.2` model is not available, the program will raise warnings and responses from the LLM will fail.
+
+4. **Prepare data folders:**
 
    When you run the app, the following directories will be created automatically if they do not exist:
 
@@ -53,6 +73,7 @@ quit
 - **vector_db.py**: Manages document vectorization, persistent storage, and similarity search.
 - **embeddings.py**: Wraps a TF-IDF vectorizer for simple semantic representation.
 - **preprocessing.py**: Cleans and chunks `.txt` and `.docx` files for embedding.
+- **utils.py**: Some general functions to check with the Ollama server
 
 **Data Flow:**
 
@@ -78,11 +99,6 @@ The chatbot adapts its language based on the input (Dutch or English) and priori
 
 - **Empty `raw/` folder**: No contextual data will be available if the folder is empty.
 - **Static TF-IDF Embeddings**: Semantic matching is limited by TF-IDF's vocabulary and shallow context representation.
-- **No session memory**: Context is handled per-turn; the chatbot does not track conversation history.
 - **Relevance Loop Overhead**: The LLM-driven `_contextCheck()` may slow down responses if context is deemed insufficient.
 - **No Web UI**: The system runs in a terminal interface only.
 - **Limited File Support**: Only `.docx` and `.txt` documents are supported.
-
----
-
-For improvement ideas, consider adding embedding upgrades (e.g. Sentence-BERT), dialogue history, or a simple front-end for enhanced accessibility.
