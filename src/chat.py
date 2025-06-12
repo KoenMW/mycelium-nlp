@@ -31,6 +31,21 @@ class Chat:
             http_client=httpx.Client(trust_env=False)
         )
 
+    def reset(self):
+        self.messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an assistant that helps users understand and explore the Mycelium Project. "
+                    "This is a scientific and applied research project carried out by students at InHolland University of Applied Sciences in Haarlem. "
+                    "The project is part of the Data Driven Smart Society program and focuses on using fungal mycelium for applications like bioremediation, sustainable materials, and environmental monitoring. "
+                    "You provide detailed and factual answers in Dutch or English, depending on how the user asks the question. "
+                    "Use the context provided from the vector database to inform your answers. If context is insufficient, you may ask for clarification or suggest how to refine the question."
+                    "You will always respond"
+                    "You will always responde in the same language as the user"
+                )
+            }]
+
     def contextCheck(self, question: str, failed_queries: list[str] = []):
         if len(failed_queries) >= 5:
             return vector_db.similarity_search(failed_queries[0])
@@ -149,7 +164,7 @@ class Chat:
         temp_messages = self.messages
         temp_messages.append({"role": "system", "content": f"Contex related to the question:\n{context}"})
         temp_messages.append({"role": "user", "content": user_message})
-        
+
         # Call LLM
         response = self.client.chat.completions.create(
             model=MODEL,
