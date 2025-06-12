@@ -56,6 +56,9 @@ Then, restart this script.
         if user_input.lower() in {"stop", "exit", "quit"}:
             print("Goodbye!")
             break
+        if user_input.lower() in {"reset"}:
+            chat.reset
+            continue
 
         try:
             reply = chat.send(user_input)
