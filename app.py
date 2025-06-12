@@ -1,5 +1,6 @@
 import os
-from src.chat import Chat
+from src.chat import Chat, MODEL
+import src.utils as utils
 
 def ensure_directories():
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "./data"))
@@ -12,7 +13,39 @@ def ensure_directories():
     if not os.listdir(raw_dir):
         print("Warning: './data/raw' is empty. No raw data will be used.")
 
+
+
+
 def main():
+    if not utils.server_ping():
+        print("""
+==============================
+  Ollama Server Not Available
+==============================
+
+Please run the following command to start the server:
+
+    ollama serve
+
+Then, restart this script.
+""")
+        return
+    
+    if not utils.model_check():
+        print(f"""
+==============================
+  {MODEL} not availlable 
+==============================
+
+Please run the following command to get the model:
+
+    ollama pull {MODEL}
+
+Then, restart this script.
+""")
+        return
+
+
     ensure_directories()
 
     chat = Chat()

@@ -4,6 +4,7 @@ from src.vector_db import VectorDB
 import httpx
 import json
 
+MODEL="llama3.2"
 
 # Global instance
 vector_db = VectorDB()
@@ -19,6 +20,8 @@ class Chat:
                     "The project is part of the Data Driven Smart Society program and focuses on using fungal mycelium for applications like bioremediation, sustainable materials, and environmental monitoring. "
                     "You provide detailed and factual answers in Dutch or English, depending on how the user asks the question. "
                     "Use the context provided from the vector database to inform your answers. If context is insufficient, you may ask for clarification or suggest how to refine the question."
+                    "You will always respond"
+                    "You will always responde in the same language as the user"
                 )
             }
         ]
@@ -28,11 +31,11 @@ class Chat:
             http_client=httpx.Client(trust_env=False)
         )
 
-    def _contextCheck(self, question: str, failed_queries: list[str] = []):
+    def contextCheck(self, question: str, failed_queries: list[str] = []):
         if len(failed_queries) >= 5:
             return vector_db.similarity_search(failed_queries[0])
         
-        context_results = vector_db.similarity_search(question)
+        context_results = vector_db.similarity_search(question, 3)
 
         system_prompt = """
     You are a relevance-checker whose job is to decide whether the retrieved “context_results” 
@@ -73,6 +76,7 @@ class Chat:
         that targets whatever information is missing.  
         - Do NOT echo or lightly rephrase the original question.  
         - Add extra keywords, synonyms, or related concepts to broaden the search.
+        - Sometimes trying it in another language can be helpfull
     • “data” = "".
     5. No additional keys—only “sufficient”, “query”, “question”, and “data” are allowed.
         """
@@ -89,7 +93,7 @@ class Chat:
         ]
 
         response = self.client.chat.completions.create(
-            model="llama3.2",
+            model=MODEL,
             messages=messages,
             response_format={
                 "type": "json_schema",
@@ -129,32 +133,43 @@ class Chat:
              json_content = json.loads(content)
              if not json_content['sufficient']:
                  failed_queries.append(question)
-                 return self._contextCheck(json_content['query'], failed_queries)
+                 return self.contextCheck(json_content['query'], failed_queries)
         return context_results
 
 
 
     def send(self, user_message: str):
         # Get similar context from vector DB
-        context_results = self._contextCheck(user_message)
+        context_results = self.contextCheck(user_message)
 
         # Format the context data (ignoring the score for now)
-        context_texts = [text for text, score in context_results]
+        context_texts = [text for text, _ in context_results]
         context = "\n\n".join(context_texts)
 
-
-        # Create temporary message list with system context
-        temp_messages: list[ChatCompletionMessageParam] = [{"role": "system", "content": f"Contex related to the question:\n{context}"}]
-        temp_messages.extend(self.messages)
+        temp_messages = self.messages
+        temp_messages.append({"role": "system", "content": f"Contex related to the question:\n{context}"})
         temp_messages.append({"role": "user", "content": user_message})
-
+        
         # Call LLM
         response = self.client.chat.completions.create(
-            model="llama3.2",
+            model=MODEL,
             messages=temp_messages
         )
 
-        # Save only user and assistant messages
+
+        while not response.choices[0].message.content:
+            temp_messages = self.messages
+            temp_messages.append({
+                "role": "system",
+                "content": "the assistant should always respond to the user with something"
+            })
+            temp_messages.append({"role": "system", "content": f"Contex related to the question:\n{context}"})
+            temp_messages.append({"role": "user", "content": user_message})
+            response = self.client.chat.completions.create(
+                model="llama3.2",
+                messages=self.messages
+            )
+
         self.messages.append({"role": "user", "content": user_message})
         assistant_reply = response.choices[0].message.content
         self.messages.append({"role": "assistant", "content": assistant_reply})
